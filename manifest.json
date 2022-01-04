@@ -1,0 +1,12 @@
+{
+  "name": "SlitherlinkWidget",
+  "id": "1059995661347553697",
+  "api": "1.0.0",
+  "main": "puzzle.js",
+  "editorType": [
+    "figjam"
+  ],
+  "permissions": ["activeusers"],
+  "containsWidget": true,
+  "widgetApi": "1.0.0"
+}
