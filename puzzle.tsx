@@ -1,5 +1,5 @@
 const { widget } = figma;
-const { AutoLayout, Frame, Ellipse, Rectangle, Text, useSyncedState, useEffect } = widget;
+const { AutoLayout, Frame, Ellipse, Rectangle, Text, useSyncedState, useSyncedMap, useEffect } = widget;
 
 const GRID_PADDING = 24;
 const DOT_RADIUS = 5;
@@ -8,6 +8,47 @@ const BORDER_STROKE = 4;
 const NUMBER_FONT_SIZE = 24;
 const CROSS_FONT_SIZE = 18;
 const CROSS_WIDTH = CROSS_FONT_SIZE;
+
+function showRadioButton(label: string, value: string, cellKey: string, cellContents: string) {
+  return `
+  <div>
+      <input type="radio" id="cellStatus-${cellKey}-${label}" name="cellStatus" value="${label}" ${cellContents == value ? "checked" : ""}>
+      <label for="cellStatus${label}">${label}</label>
+    </div>
+  `
+}
+
+function handleRadioClick(label: string, value: string, cellKey: string) {
+  return `
+  const input${label} = document.getElementById("cellStatus-${cellKey}-${label}");
+  input${label}.addEventListener("click", () => {
+    parent.postMessage({
+      pluginMessage: {
+        cellKey: "${cellKey}",
+        contents: "${value}",
+      },
+    }, '*');
+  })
+  `
+}
+
+function showEditorForCell(cellKey: string, cellContents: string) {
+  figma.showUI(`
+    <h3>Select a value for the cell:</h3>
+    ${showRadioButton("0", "0", cellKey, cellContents)}  
+    ${showRadioButton("1", "1", cellKey, cellContents)}  
+    ${showRadioButton("2", "2", cellKey, cellContents)}  
+    ${showRadioButton("3", "3", cellKey, cellContents)}  
+    ${showRadioButton("None", "", cellKey, cellContents)}
+    <script>
+      ${handleRadioClick("0", "0", cellKey)}  
+      ${handleRadioClick("1", "1", cellKey)}  
+      ${handleRadioClick("2", "2", cellKey)}  
+      ${handleRadioClick("3", "3", cellKey)}  
+      ${handleRadioClick("None", "", cellKey)}
+    </script>
+  `)
+}
 
 function Dots({ m, n }: { m: number; n: number }) {
   return Array(m + 1)
@@ -27,23 +68,39 @@ function Dots({ m, n }: { m: number; n: number }) {
     );
 }
 
+function CellNumber({ i, j, valuesMap }: { i: number, j: number, valuesMap: SyncedMap<string> }) {
+  const key = `number-${i}-${j}`
+  const value = valuesMap.get(key) ?? ''
+  return (
+    <AutoLayout
+      y={GRID_PADDING + i * CELL_SIZE}
+      x={GRID_PADDING + j * CELL_SIZE}
+      width={CELL_SIZE}
+      height={CELL_SIZE}
+      horizontalAlignItems="center"
+      verticalAlignItems="center"
+      onClick={() => {
+        showEditorForCell(key, value)
+        return new Promise<void>(() => {})
+      }}
+    >
+      <Text fontSize={NUMBER_FONT_SIZE}>{value}</Text>
+    </AutoLayout>
+  )
+}
+
 function Numbers({ values }: { values: number[][] }) {
-  return values.map((row: number[], i: number) => 
-    row.map((value: number, j: number) => {
-      const key = `numbers-${i}-${j}`;
-      return (
-        <AutoLayout
-          y={GRID_PADDING + i * CELL_SIZE}
-          x={GRID_PADDING + j * CELL_SIZE}
-          width={CELL_SIZE}
-          height={CELL_SIZE}
-          horizontalAlignItems="center"
-          verticalAlignItems="center"
-        >
-          <Text fontSize={NUMBER_FONT_SIZE}>{value}</Text>
-        </AutoLayout>
-      )
-    })
+  const valuesMap = useSyncedMap<string>("cells");
+  useEffect(() => {
+    figma.ui.onmessage = ({ contents, cellKey }) => {
+      valuesMap.set(cellKey, contents)
+      figma.closePlugin()
+    }
+  })
+  return values.map((row: number[], i: number) =>
+    row.map((value: number, j: number) => (
+      <CellNumber i={i} j={j} valuesMap={valuesMap}/>
+    ))
   );
 }
 
