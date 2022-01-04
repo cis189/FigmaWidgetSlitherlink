@@ -42,12 +42,6 @@ function Numbers({ values }: { values: number[][] }) {
   );
 }
 
-interface Cell {
-  row: number;
-  col: number;
-  value: number;
-}
-
 function HorizontalBorder({ i, j }: { i: number; j: number }) {
   const key = `horizontal-border-${i}-${j}`
   const [filled, setFilled] = useSyncedState(key, false)
