@@ -24,6 +24,12 @@ const buttonSrcDown = `
 </svg>
 `
 
+const buttonSrcOk = `
+<svg width="${BUTTON_SIZE}" height="${BUTTON_SIZE}" viewBox="0 0 ${BUTTON_SIZE} ${BUTTON_SIZE}" fill="none">
+<circle cx="${BUTTON_SIZE/2}" cy="${BUTTON_SIZE/2}" r="${BUTTON_SIZE/2 - 0.5}" stroke="black" stroke-opacity="0.1" fill="white"/>
+</svg>
+`
+
 function showRadioButton(label: string, value: string, cellKey: string, cellContents: string) {
   return `
   <div>
@@ -83,10 +89,10 @@ function Dots({ m, n }: { m: number; n: number }) {
     );
 }
 
-function CellNumber({ i, j }: { i: number, j: number }) {
+function CellNumber({ initValue, i, j }: { initValue: string, i: number, j: number }) {
   const key = `number-${i}-${j}`
   const valuesMap = useSyncedMap<string>("cells")
-  const value = valuesMap.get(key) ?? ''
+  const value = valuesMap.get(key) ?? initValue
   return (
     <AutoLayout
       x={GRID_PADDING + j * CELL_SIZE}
@@ -115,7 +121,7 @@ function Numbers({ values }: { values: number[][] }) {
   })
   return values.map((row: number[], i: number) =>
     row.map((value: number, j: number) => (
-      <CellNumber i={i} j={j}/>
+      <CellNumber initValue={`${value}`} i={i} j={j}/>
     ))
   );
 }
@@ -214,16 +220,18 @@ function Borders({m,n}: {m: number, n: number}) {
 function ResizeButtons() {
   const [n, setN] = useSyncedState('n', 0);
   const [m, setM] = useSyncedState('m', 0);
+  const [visible, setVisible] = useSyncedState('resizeVisible', true);
   return (
     <AutoLayout
       x={0}
       y={0}
       width={BUTTON_SIZE}
-      height={BUTTON_SIZE*2 + BORDER_STROKE}
+      height={BUTTON_SIZE*3 + BORDER_STROKE*2}
       direction="vertical"
       fill="#fff"
       cornerRadius={8}
       spacing={BORDER_STROKE}
+      hidden={!visible}
     >
       <SVG
         src={buttonSrcRight}
@@ -237,6 +245,22 @@ function ResizeButtons() {
           setN(n => n+1)
         }}
       />
+      <Frame width={BUTTON_SIZE} height={BUTTON_SIZE}>
+      <SVG
+        src={buttonSrcOk}
+        onClick={() => {
+          setVisible(false)
+        }}
+      />
+      <Text 
+        horizontalAlignText="center" 
+        fontSize={CROSS_FONT_SIZE}
+        x={BUTTON_SIZE/2} 
+        y={BUTTON_SIZE/2 - CROSS_FONT_SIZE/2}
+      >
+      ✔
+      </Text>
+      </Frame>
     </AutoLayout>
   )
 }
@@ -244,8 +268,7 @@ function ResizeButtons() {
 
 function Widget() {
   const values: number[][] = [
-    [0, 0],
-    [3, 0],
+    [0]
   ];
   const [n, setN] = useSyncedState('n', values.length);
   const [m, setM] = useSyncedState('m', values.length);
@@ -253,7 +276,7 @@ function Widget() {
   return (
     <Frame
       width={m*CELL_SIZE + 2*GRID_PADDING + BUTTON_SIZE}
-      height={n*CELL_SIZE + 2*GRID_PADDING}
+      height={Math.max(n*CELL_SIZE + 2*GRID_PADDING, BUTTON_SIZE*3.5 + BORDER_STROKE * 2)}
     >
       <Frame
         x={BUTTON_SIZE}
@@ -267,7 +290,7 @@ function Widget() {
       </Frame>
       <Frame
         width={BUTTON_SIZE}
-        height={BUTTON_SIZE*2 + BORDER_STROKE}
+        height={BUTTON_SIZE*3 + BORDER_STROKE*2}
         y={BUTTON_SIZE*0.5}
       >
         <ResizeButtons />
