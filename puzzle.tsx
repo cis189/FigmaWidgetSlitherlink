@@ -111,7 +111,7 @@ function CellNumber({ initValue, i, j }: { initValue: string, i: number, j: numb
   )
 }
 
-function Numbers({ values }: { values: number[][] }) {
+function Numbers({ n, m, initValues }: { n: number, m: number, initValues: number[][] }) {
   const valuesMap = useSyncedMap<string>("cells")
   useEffect(() => {
     figma.ui.onmessage = ({ contents, cellKey }) => {
@@ -119,10 +119,13 @@ function Numbers({ values }: { values: number[][] }) {
       figma.closePlugin()
     }
   })
-  return values.map((row: number[], i: number) =>
-    row.map((value: number, j: number) => (
-      <CellNumber initValue={`${value}`} i={i} j={j}/>
-    ))
+  return Array(n).fill(0).map((_, row) =>
+    Array(m).fill(0).map((_, col) => {
+      const value = (row < initValues.length && col < initValues[0].length) ? initValues[row][col] : ''
+      return (
+      <CellNumber initValue={`${value}`} i={row} j={col}/>
+      )
+    })
   );
 }
 
@@ -245,12 +248,15 @@ function ResizeButtons() {
           setN(n => n+1)
         }}
       />
-      <Frame width={BUTTON_SIZE} height={BUTTON_SIZE}>
-      <SVG
-        src={buttonSrcOk}
+      <Frame 
+        width={BUTTON_SIZE} 
+        height={BUTTON_SIZE}
         onClick={() => {
           setVisible(false)
         }}
+      >
+      <SVG
+        src={buttonSrcOk}
       />
       <Text 
         horizontalAlignText="center" 
@@ -268,10 +274,10 @@ function ResizeButtons() {
 
 function Widget() {
   const values: number[][] = [
-    [0]
+    [0],
   ];
   const [n, setN] = useSyncedState('n', values.length);
-  const [m, setM] = useSyncedState('m', values.length);
+  const [m, setM] = useSyncedState('m', values[0].length);
 
   return (
     <Frame
@@ -284,7 +290,7 @@ function Widget() {
         height={n * CELL_SIZE + 2 * GRID_PADDING}
         fill={"#ffffff"}
       >
-        <Numbers values={values} />
+        <Numbers m={m} n={n} initValues={values} />
         <Dots m={m} n={n} />
         <Borders m={m} n={n} />
       </Frame>
