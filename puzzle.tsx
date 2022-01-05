@@ -278,17 +278,29 @@ function Widget() {
   ];
   const [n, setN] = useSyncedState('n', values.length);
   const [m, setM] = useSyncedState('m', values[0].length);
+  const [visible, setVisible] = useSyncedState('resizeVisible', true);
+
 
   return (
     <Frame
-      width={m*CELL_SIZE + 2*GRID_PADDING + BUTTON_SIZE}
-      height={Math.max(n*CELL_SIZE + 2*GRID_PADDING, BUTTON_SIZE*3.5 + BORDER_STROKE * 2)}
+      width={3 + m*CELL_SIZE + 2*GRID_PADDING + (visible ? BUTTON_SIZE : 0)}
+      height={3 + Math.max(n*CELL_SIZE + 2*GRID_PADDING, (visible ? BUTTON_SIZE*3.5 + BORDER_STROKE * 2 : 0))}
     >
       <Frame
-        x={BUTTON_SIZE}
+        x={visible ? BUTTON_SIZE : 0}
         width={m * CELL_SIZE + 2 * GRID_PADDING}
         height={n * CELL_SIZE + 2 * GRID_PADDING}
-        fill={"#ffffff"}
+        fill={'#ffffff'}
+        stroke={'#e6e6e6'}
+        strokeWidth={0.5}
+        cornerRadius={3}
+        effect={{
+          type: 'drop-shadow',
+          color: { r: 0, g: 0, b: 0, a: 0.2 },
+          offset: { x: 0, y: 0 },
+          blur: 5,
+          spread: 5,
+        }}
       >
         <Numbers m={m} n={n} initValues={values} />
         <Dots m={m} n={n} />
