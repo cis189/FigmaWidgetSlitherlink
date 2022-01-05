@@ -1,5 +1,5 @@
 const { widget } = figma;
-const { AutoLayout, Frame, Ellipse, Rectangle, Text, useSyncedState, useSyncedMap, useEffect } = widget;
+const { AutoLayout, Frame, Ellipse, Rectangle, SVG, Text, useSyncedState, useSyncedMap, useEffect } = widget;
 
 const GRID_PADDING = 24;
 const DOT_RADIUS = 5;
@@ -8,6 +8,21 @@ const BORDER_STROKE = 4;
 const NUMBER_FONT_SIZE = 24;
 const CROSS_FONT_SIZE = 18;
 const CROSS_WIDTH = CROSS_FONT_SIZE;
+const BUTTON_SIZE = 32;
+
+const buttonSrcRight = `
+  <svg width="${BUTTON_SIZE}" height="${BUTTON_SIZE}" viewBox="0 0 ${BUTTON_SIZE} ${BUTTON_SIZE}" fill="none">
+  <circle cx="${BUTTON_SIZE/2}" cy="${BUTTON_SIZE/2}" r="${BUTTON_SIZE/2 - 0.5}" stroke="black" stroke-opacity="0.1" fill="white"/>
+  <path transform="translate(${BUTTON_SIZE/2 - 4} ${BUTTON_SIZE/2 - 8})" fill="black" fill-opacity="0.8" d="M0 0 L4 0 L10 8 L4 16 L0 16 L6 8 Z"></path>
+  </svg>
+`
+
+const buttonSrcDown = `
+<svg width="${BUTTON_SIZE}" height="${BUTTON_SIZE}" viewBox="0 0 ${BUTTON_SIZE} ${BUTTON_SIZE}" fill="none">
+<circle cx="${BUTTON_SIZE/2}" cy="${BUTTON_SIZE/2}" r="${BUTTON_SIZE/2 - 0.5}" stroke="black" stroke-opacity="0.1" fill="white"/>
+<path transform="translate(${BUTTON_SIZE/2 + 8} ${BUTTON_SIZE/2 - 4}); rotate(90)" fill="black" fill-opacity="0.8" d="M0 0 L4 0 L10 8 L4 16 L0 16 L6 8 Z"></path>
+</svg>
+`
 
 function showRadioButton(label: string, value: string, cellKey: string, cellContents: string) {
   return `
@@ -68,13 +83,14 @@ function Dots({ m, n }: { m: number; n: number }) {
     );
 }
 
-function CellNumber({ i, j, valuesMap }: { i: number, j: number, valuesMap: SyncedMap<string> }) {
+function CellNumber({ i, j }: { i: number, j: number }) {
   const key = `number-${i}-${j}`
+  const valuesMap = useSyncedMap<string>("cells")
   const value = valuesMap.get(key) ?? ''
   return (
     <AutoLayout
-      y={GRID_PADDING + i * CELL_SIZE}
       x={GRID_PADDING + j * CELL_SIZE}
+      y={GRID_PADDING + i * CELL_SIZE}
       width={CELL_SIZE}
       height={CELL_SIZE}
       horizontalAlignItems="center"
@@ -90,7 +106,7 @@ function CellNumber({ i, j, valuesMap }: { i: number, j: number, valuesMap: Sync
 }
 
 function Numbers({ values }: { values: number[][] }) {
-  const valuesMap = useSyncedMap<string>("cells");
+  const valuesMap = useSyncedMap<string>("cells")
   useEffect(() => {
     figma.ui.onmessage = ({ contents, cellKey }) => {
       valuesMap.set(cellKey, contents)
@@ -99,7 +115,7 @@ function Numbers({ values }: { values: number[][] }) {
   })
   return values.map((row: number[], i: number) =>
     row.map((value: number, j: number) => (
-      <CellNumber i={i} j={j} valuesMap={valuesMap}/>
+      <CellNumber i={i} j={j}/>
     ))
   );
 }
@@ -124,7 +140,7 @@ function HorizontalBorder({ i, j }: { i: number; j: number }) {
       <Text 
         x={CELL_SIZE/2}
         y={BORDER_STROKE-CROSS_FONT_SIZE/2+2}
-        fill={'#ff0000'}
+        fill={'#b80f0a'}
         hidden={state == BorderState.CROSSED ? false : true}
         horizontalAlignText="center"
         verticalAlignText="bottom"
@@ -160,7 +176,7 @@ function VerticalBorder({ i, j }: { i: number; j: number }) {
       <Text 
         x={BORDER_STROKE / 2 + CROSS_WIDTH / 2 - 1}
         y={CELL_SIZE/2 - CROSS_FONT_SIZE + 2}
-        fill={'#ff0000'}
+        fill={'#b80f0a'}
         hidden={state == BorderState.CROSSED ? false : true}
         horizontalAlignText="center"
         textCase="small-caps"
@@ -195,24 +211,67 @@ function Borders({m,n}: {m: number, n: number}) {
   return horizontalBorders.concat(verticalBorders)
 }
 
+function ResizeButtons() {
+  const [n, setN] = useSyncedState('n', 0);
+  const [m, setM] = useSyncedState('m', 0);
+  return (
+    <AutoLayout
+      x={0}
+      y={0}
+      width={BUTTON_SIZE}
+      height={BUTTON_SIZE*2 + BORDER_STROKE}
+      direction="vertical"
+      fill="#fff"
+      cornerRadius={8}
+      spacing={BORDER_STROKE}
+    >
+      <SVG
+        src={buttonSrcRight}
+        onClick={() => {
+          setM(m => m+1)
+        }}
+        />
+      <SVG
+        src={buttonSrcDown}
+        onClick={() => {
+          setN(n => n+1)
+        }}
+      />
+    </AutoLayout>
+  )
+}
+
 
 function Widget() {
   const values: number[][] = [
     [0, 0],
     [3, 0],
   ];
-  const m = values.length;
-  const n = values[0].length;
+  const [n, setN] = useSyncedState('n', values.length);
+  const [m, setM] = useSyncedState('m', values.length);
 
   return (
     <Frame
-      width={m * CELL_SIZE + 2 * GRID_PADDING}
-      height={n * CELL_SIZE + 2 * GRID_PADDING}
-      fill={"#FFFFFF"}
+      width={m*CELL_SIZE + 2*GRID_PADDING + BUTTON_SIZE}
+      height={n*CELL_SIZE + 2*GRID_PADDING}
     >
-      <Numbers values={values} />
-      <Dots m={m} n={n} />
-      <Borders m={m} n={n} />
+      <Frame
+        x={BUTTON_SIZE}
+        width={m * CELL_SIZE + 2 * GRID_PADDING}
+        height={n * CELL_SIZE + 2 * GRID_PADDING}
+        fill={"#ffffff"}
+      >
+        <Numbers values={values} />
+        <Dots m={m} n={n} />
+        <Borders m={m} n={n} />
+      </Frame>
+      <Frame
+        width={BUTTON_SIZE}
+        height={BUTTON_SIZE*2 + BORDER_STROKE}
+        y={BUTTON_SIZE*0.5}
+      >
+        <ResizeButtons />
+      </Frame>
     </Frame>
   );
 }
