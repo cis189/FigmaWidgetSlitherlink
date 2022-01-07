@@ -9,6 +9,7 @@ const NUMBER_FONT_SIZE = 24;
 const CROSS_FONT_SIZE = 18;
 const CROSS_WIDTH = CROSS_FONT_SIZE;
 const BUTTON_SIZE = 32;
+const GUESS_DOTTED_SPACING = 4;
 
 const buttonSrcRight = `
   <svg width="${BUTTON_SIZE}" height="${BUTTON_SIZE}" viewBox="0 0 ${BUTTON_SIZE} ${BUTTON_SIZE}" fill="none">
@@ -132,7 +133,9 @@ function Numbers({ n, m, initValues }: { n: number, m: number, initValues: numbe
 enum BorderState {
   EMPTY = 0,
   FILLED,
-  CROSSED
+  CROSSED,
+  GUESS,
+  __LENGTH
 }
 
 function HorizontalBorder({ i, j }: { i: number; j: number }) {
@@ -165,7 +168,7 @@ function HorizontalBorder({ i, j }: { i: number; j: number }) {
         height={BORDER_STROKE}
         fill={'#000000'}
         opacity={state == BorderState.FILLED ? 1 : 0}
-        onClick={() => setState((filled) => (filled + 1) % 3)}
+        onClick={() => setState((filled) => (filled + 1) % BorderState.__LENGTH)}
       />
     </Frame>
       )
@@ -193,6 +196,36 @@ function VerticalBorder({ i, j }: { i: number; j: number }) {
         fontSize={CROSS_FONT_SIZE}
         fontFamily="Roboto Mono"
       >x</Text>
+      <AutoLayout
+        x={CROSS_WIDTH/2}
+        y={0}
+        width={BORDER_STROKE}
+        height={CELL_SIZE}
+        direction="vertical"
+        spacing={GUESS_DOTTED_SPACING}
+        hidden={state == BorderState.GUESS ? false : true}
+      >
+        <Rectangle 
+          width={BORDER_STROKE}
+          height={CELL_SIZE/4 - GUESS_DOTTED_SPACING}
+          fill={'#000000'}
+        />
+        <Rectangle 
+          width={BORDER_STROKE}
+          height={CELL_SIZE/4 - GUESS_DOTTED_SPACING}
+          fill={'#000000'}
+        />
+        <Rectangle 
+          width={BORDER_STROKE}
+          height={CELL_SIZE/4 - GUESS_DOTTED_SPACING}
+          fill={'#000000'}
+        />
+        <Rectangle 
+          width={BORDER_STROKE}
+          height={CELL_SIZE/4 - GUESS_DOTTED_SPACING}
+          fill={'#000000'}
+        />
+      </AutoLayout>
       <Rectangle 
         x={CROSS_WIDTH/2}
         y={0}
@@ -200,7 +233,7 @@ function VerticalBorder({ i, j }: { i: number; j: number }) {
         height={CELL_SIZE}
         fill={'#000000'}
         opacity={state == BorderState.FILLED ? 1 : 0}
-        onClick={() => setState((filled) => (filled + 1) % 3)}
+        onClick={() => setState((filled) => (filled + 1) % BorderState.__LENGTH)}
       />
     </Frame>
   )
